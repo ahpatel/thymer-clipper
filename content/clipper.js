@@ -386,58 +386,44 @@ class ThymerClipper {
 
   // Setup text selection events to position floating toolbar
   setupSelectionListener() {
-    const handleSelection = () => {
-      // Prevent hiding selection menu if user is focusing/typing inside any note input
-      if (this.shadowRoot && this.shadowRoot.activeElement && 
+    // Use selectionchange instead of mouseup to avoid interfering with
+    // the browser's native click/selection handling (double-click, triple-click, etc.)
+    let selectionTimer = null;
+
+    document.addEventListener("selectionchange", () => {
+      // Ignore selection changes inside our own note inputs
+      if (this.shadowRoot && this.shadowRoot.activeElement &&
           (this.shadowRoot.activeElement.id === 'clipper-note-input' || this.shadowRoot.activeElement.id === 'clipper-edit-note-input')) {
         return;
       }
 
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        this.hideSelectionMenu();
-        return;
-      }
+      if (selectionTimer) clearTimeout(selectionTimer);
+      selectionTimer = setTimeout(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+          this.hideSelectionMenu();
+          return;
+        }
 
-      const range = selection.getRangeAt(0);
-      const text = range.toString().trim();
-
-      if (text.length > 0) {
-        this.activeRange = range;
-        this.showSelectionMenu(range);
-      } else {
-        this.hideSelectionMenu();
-      }
-    };
-
-    let mouseUpTimeout = null;
-    let multiClickDetail = 0;
-    document.addEventListener("mouseup", (e) => {
-      if (mouseUpTimeout) clearTimeout(mouseUpTimeout);
-      multiClickDetail = e.detail;
-      const delay = (e.detail >= 3) ? 500 : (e.detail >= 2) ? 400 : 200;
-      mouseUpTimeout = setTimeout(() => {
-        handleSelection();
-        multiClickDetail = 0;
-      }, delay);
+        const range = selection.getRangeAt(0);
+        const text = range.toString().trim();
+        if (text.length > 0) {
+          this.activeRange = range;
+          this.showSelectionMenu(range);
+        } else {
+          this.hideSelectionMenu();
+        }
+      }, 500);
     });
 
-    document.addEventListener("keyup", (e) => {
-      // Ignore key events if focused on input/textarea
-      if (this.shadowRoot && this.shadowRoot.activeElement && 
-          (this.shadowRoot.activeElement.id === 'clipper-note-input' || this.shadowRoot.activeElement.id === 'clipper-edit-note-input')) {
-        return;
-      }
-      handleSelection();
-    });
-
-    // Hide menu on clicking elsewhere
+    // Hide menu on clicking elsewhere (before selectionchange fires)
     document.addEventListener("mousedown", (e) => {
-      if (e.target.tagName === 'THYMER-CLIPPER-CONTAINER') return;
+      // Don't hide if clicking inside the thymer-clipper-container (shadow DOM)
+      if (e.composedPath().some(el => el.tagName === 'THYMER-CLIPPER-CONTAINER')) return;
       this.hideSelectionMenu();
     });
 
-    // Detect click on highlight mark to show delete menu
+    // Detect click on highlight mark to show edit menu
     document.addEventListener("click", (e) => {
       const mark = e.target.closest('mark.thymer-highlight');
       if (mark) {
@@ -1205,9 +1191,16 @@ class ThymerClipper {
 
     // On LinkedIn, scope body text / word count / excerpt to the post container only
     if (hostname.includes("linkedin.com")) {
-      const linkedinContainer = document.querySelector('.feed-shared-update-v2') ||
+      const linkedinContainer =
+        document.querySelector('.feed-shared-update-v2') ||
         document.querySelector('[data-urn]') ||
-        (document.querySelector('.update-components-actor__container')?.closest('.feed-shared-update-v2'));
+        document.querySelector('[data-id^="urn:li:activity"]') ||
+        document.querySelector('.occludable-update') ||
+        document.querySelector('.feed-shared-box') ||
+        (document.querySelector('.update-components-actor__container')?.closest('.feed-shared-update-v2, [data-urn], .occludable-update, .feed-shared-box, article, div[class*="update"]')) ||
+        (document.querySelector('.update-components-actor__container')?.parentElement) ||
+        (document.querySelector('.update-components-text')?.closest('article, section, div[class*="update"], div[class*="post"]')) ||
+        document.querySelector('main article');
       if (linkedinContainer) {
         const scopedText = linkedinContainer.innerText || "";
         const scopedWords = scopedText.split(/\s+/).filter(Boolean).length;
@@ -1331,15 +1324,23 @@ class ThymerClipper {
   getLinkedInPostHtml() {
     // Defensively click any remaining "see more" buttons inside the container
     const seeMoreBtns = document.querySelectorAll(
-      '.feed-shared-update-v2 .see-more, .feed-shared-update-v2 .inline-show-more-text__button, .feed-shared-update-v2 button.see-more'
+      '.feed-shared-update-v2 .see-more, .feed-shared-update-v2 .inline-show-more-text__button, .feed-shared-update-v2 button.see-more, .see-more, .inline-show-more-text__button, button.see-more'
     );
     for (const btn of seeMoreBtns) {
       try { btn.click(); } catch (_) {}
     }
 
-    const postContainer = document.querySelector('.feed-shared-update-v2') ||
+    // Try multiple strategies to find the post container
+    const postContainer =
+      document.querySelector('.feed-shared-update-v2') ||
       document.querySelector('[data-urn]') ||
-      (document.querySelector('.update-components-actor__container')?.closest('.feed-shared-update-v2'));
+      document.querySelector('[data-id^="urn:li:activity"]') ||
+      document.querySelector('.occludable-update') ||
+      document.querySelector('.feed-shared-box') ||
+      (document.querySelector('.update-components-actor__container')?.closest('.feed-shared-update-v2, [data-urn], .occludable-update, .feed-shared-box, article, div[class*="update"]')) ||
+      (document.querySelector('.update-components-actor__container')?.parentElement) ||
+      (document.querySelector('.update-components-text')?.closest('article, section, div[class*="update"], div[class*="post"]')) ||
+      document.querySelector('main article');
 
     if (!postContainer) return null;
 
@@ -1491,7 +1492,15 @@ class ThymerClipper {
     if (hostname.includes("linkedin.com")) {
       const postHtml = this.getLinkedInPostHtml();
       if (postHtml) return postHtml;
-      return `<div class="linkedin-post"><p>LinkedIn post</p></div>`;
+      // Last-resort LinkedIn fallback: try to grab the update-components-text directly
+      const textEl = document.querySelector('.update-components-text, .feed-shared-update-v2__description-text, .feed-shared-text');
+      if (textEl) {
+        const clone = textEl.cloneNode(true);
+        clone.querySelectorAll('.see-more, .inline-show-more-text__button').forEach(el => el.remove());
+        const clean = this.cleanLinkedInTextHtml(clone);
+        if (clean) return `<div class="linkedin-post"><div class="linkedin-text">${clean}</div></div>`;
+      }
+      return ''; // empty string so caller uses fallback
     }
 
     // Generic fallback
