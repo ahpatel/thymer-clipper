@@ -411,12 +411,15 @@ class ThymerClipper {
     };
 
     let mouseUpTimeout = null;
+    let multiClickDetail = 0;
     document.addEventListener("mouseup", (e) => {
       if (mouseUpTimeout) clearTimeout(mouseUpTimeout);
-      
-      // Delay to let click sequences (double click for word, triple click for sentence) settle
-      const delay = (e.detail >= 2) ? 300 : 150;
-      mouseUpTimeout = setTimeout(handleSelection, delay);
+      multiClickDetail = e.detail;
+      const delay = (e.detail >= 3) ? 500 : (e.detail >= 2) ? 400 : 200;
+      mouseUpTimeout = setTimeout(() => {
+        handleSelection();
+        multiClickDetail = 0;
+      }, delay);
     });
 
     document.addEventListener("keyup", (e) => {
@@ -438,8 +441,6 @@ class ThymerClipper {
     document.addEventListener("click", (e) => {
       const mark = e.target.closest('mark.thymer-highlight');
       if (mark) {
-        e.preventDefault();
-        e.stopPropagation();
         this.activeHighlightMark = mark;
         this.showHighlightMenu(mark);
       } else {
