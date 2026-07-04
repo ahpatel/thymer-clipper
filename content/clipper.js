@@ -935,7 +935,7 @@ class ThymerClipper {
     const hostname = window.location.hostname.toLowerCase();
     if (hostname.includes("linkedin.com")) {
       const seeMoreBtns = document.querySelectorAll(
-        '.feed-shared-update-v2__description .see-more, .inline-show-more-text__button, [data-testid="feed-shared-inline-show-more"] button'
+        '.feed-shared-update-v2__description .see-more, .inline-show-more-text__button, button.see-more, [data-testid="feed-shared-inline-show-more"] button'
       );
       for (const btn of seeMoreBtns) {
         try { btn.click(); } catch (_) {}
@@ -1202,6 +1202,29 @@ class ThymerClipper {
       }
     }
 
+    // On LinkedIn, scope body text / word count / excerpt to the post container only
+    if (hostname.includes("linkedin.com")) {
+      const linkedinContainer = document.querySelector('.feed-shared-update-v2') ||
+        document.querySelector('[data-urn]') ||
+        (document.querySelector('.update-components-actor__container')?.closest('.feed-shared-update-v2'));
+      if (linkedinContainer) {
+        const scopedText = linkedinContainer.innerText || "";
+        const scopedWords = scopedText.split(/\s+/).filter(Boolean).length;
+        if (scopedWords > 0) {
+          bodyText = scopedText;
+          wordCount = scopedWords;
+        }
+        const postTextEl = linkedinContainer.querySelector(
+          '.feed-shared-update-v2__description-text, .update-components-text, .feed-shared-text'
+        );
+        if (postTextEl) {
+          const postText = postTextEl.textContent.trim();
+          const cleanPost = postText.replace(/\s+/g, ' ').substring(0, 300);
+          if (cleanPost) excerpt = cleanPost;
+        }
+      }
+    }
+
     return {
       title,
       url,
@@ -1305,6 +1328,14 @@ class ThymerClipper {
   // ── Smart LinkedIn Post Parser ────────────────────────────────────
 
   getLinkedInPostHtml() {
+    // Defensively click any remaining "see more" buttons inside the container
+    const seeMoreBtns = document.querySelectorAll(
+      '.feed-shared-update-v2 .see-more, .feed-shared-update-v2 .inline-show-more-text__button, .feed-shared-update-v2 button.see-more'
+    );
+    for (const btn of seeMoreBtns) {
+      try { btn.click(); } catch (_) {}
+    }
+
     const postContainer = document.querySelector('.feed-shared-update-v2') ||
       document.querySelector('[data-urn]') ||
       (document.querySelector('.update-components-actor__container')?.closest('.feed-shared-update-v2'));
@@ -1331,8 +1362,7 @@ class ThymerClipper {
     let bodyHtml = "";
     if (textEl) {
       const clone = textEl.cloneNode(true);
-      // Remove "see more" buttons that weren't expanded
-      clone.querySelectorAll('.see-more, .inline-show-more-text__button, [data-testid="feed-shared-inline-show-more"]')
+      clone.querySelectorAll('.see-more, .inline-show-more-text__button, [data-testid="feed-shared-inline-show-more"], .feed-shared-update-v2__comment-cta')
         .forEach(el => el.remove());
       bodyHtml = this.cleanLinkedInTextHtml(clone);
     }
@@ -1460,6 +1490,7 @@ class ThymerClipper {
     if (hostname.includes("linkedin.com")) {
       const postHtml = this.getLinkedInPostHtml();
       if (postHtml) return postHtml;
+      return `<div class="linkedin-post"><p>LinkedIn post</p></div>`;
     }
 
     // Generic fallback
