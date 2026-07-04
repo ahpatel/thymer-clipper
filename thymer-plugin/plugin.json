@@ -1,0 +1,10 @@
+{
+  "ver": 1,
+  "version": "1.2607.417.40",
+  "name": "Thymer Clipper",
+  "icon": "link",
+  "description": "Receives bookmarks and highlights from the Thymer Clipper Chrome extension. Sets up incoming database collections and transcludes web selections onto your Daily Journal page.",
+  "custom": {
+    "security_token": ""
+  }
+}

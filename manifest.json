@@ -1,0 +1,94 @@
+{
+  "manifest_version": 3,
+  "name": "Thymer Web Clipper",
+  "version": "1.2607.417.40",
+  "version_name": "1.2607.417.40",
+  "description": "Save articles, highlights, and social posts to Thymer with native page annotations.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "scripting",
+    "storage",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://*.thymer.com/*",
+    "https://thymer.com/*",
+    "http://*.thymer.com/*",
+    "http://thymer.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "settings/settings.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "Thymer Web Clipper"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "exclude_matches": [
+        "https://*.thymer.com/*",
+        "https://thymer.com/*",
+        "http://*.thymer.com/*",
+        "http://thymer.com/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["content/clipper.js"],
+      "css": ["content/clipper.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*.thymer.com/*",
+        "https://thymer.com/*",
+        "http://*.thymer.com/*",
+        "http://thymer.com/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["content/thymer-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "save-article": {
+      "suggested_key": {
+        "default": "Alt+Shift+S",
+        "mac": "MacCtrl+Shift+S"
+      },
+      "description": "Save current page to Thymer"
+    },
+    "add-highlight": {
+      "suggested_key": {
+        "default": "Alt+Shift+H",
+        "mac": "MacCtrl+Shift+H"
+      },
+      "description": "Highlight selected text"
+    },
+    "open-clipper": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "MacCtrl+Shift+T"
+      },
+      "description": "Open Thymer clipper popup"
+    }
+  }
+}

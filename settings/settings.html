@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Thymer Clipper Configuration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+  <div class="glow-container">
+    <div class="glow-orb target-1"></div>
+    <div class="glow-orb target-2"></div>
+  </div>
+
+  <main class="settings-card">
+    <header class="header">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="48" height="48" rx="12" fill="url(#violet-gradient)"/>
+          <path d="M16 16H32V22M24 22V36" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="violet-gradient" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#7C3AED"/>
+              <stop offset="1" stop-color="#C084FC"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="logo-text">
+          <span class="logo-title">Thymer</span>
+          <span class="logo-subtitle">Web Clipper</span>
+        </div>
+      </div>
+      <span class="badge">Settings</span>
+    </header>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>Thymer Accounts</h2>
+        <button id="add-account-btn" class="btn btn-secondary">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+          </svg>
+          Add Account
+        </button>
+      </div>
+      <p class="section-desc">Configure your Thymer account domains (e.g. slug 'myaccount'). The active account is the default target for sync.</p>
+      
+      <div id="accounts-list" class="list-container">
+        <!-- Accounts will be rendered here dynamically -->
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <section class="section">
+      <h2>Security Token</h2>
+      <p class="section-desc">For secure communication, this token must match the security token configured in your Thymer App Plugin settings.</p>
+      
+      <div class="token-container">
+        <input type="password" id="security-token" placeholder="Enter security token" class="input">
+        <button id="toggle-token-btn" class="btn btn-icon">
+          <svg id="eye-icon" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+          </svg>
+        </button>
+        <button id="generate-token-btn" class="btn btn-accent">Generate</button>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <section class="section">
+      <h2>Preferences</h2>
+      <div class="form-group">
+        <label for="default-collection">Default Save Collection</label>
+        <input type="text" id="default-collection" value="Bookmarks" class="input">
+      </div>
+      <div class="form-group" style="margin-top: 12px;">
+        <label for="settings-account-select">Active Account Target</label>
+        <select id="settings-account-select" class="input select-input" style="padding-right: 28px;">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+      <div class="form-group" style="margin-top: 12px;">
+        <label for="settings-workspace-select">Target Workspace Target</label>
+        <select id="settings-workspace-select" class="input select-input" style="padding-right: 28px;">
+          <!-- Populated dynamically -->
+        </select>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div id="status-message" class="status-msg"></div>
+      <button id="save-settings-btn" class="btn btn-primary">Save Configuration</button>
+    </footer>
+  </main>
+
+  <script src="settings.js"></script>
+</body>
+</html>
